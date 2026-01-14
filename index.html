@@ -128,7 +128,7 @@ function disparar() {
     y0: baseY - canonLargo * Math.sin(ang)
   };
 }
-
+const ESCALA = 8;
 function animar() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -143,7 +143,7 @@ function animar() {
 
   if (proyectil) {
     proyectil.t += 0.15;
-    const ESCALA = 8;
+
     const x = proyectil.x0 + proyectil.vx * proyectil.t * ESCALA;
     const y = proyectil.y0 -
   (proyectil.vy * proyectil.t * ESCALA - 0.5 * g * proyectil.t * proyectil.t * ESCALA);
