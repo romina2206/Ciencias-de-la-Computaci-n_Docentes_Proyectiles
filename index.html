@@ -143,10 +143,11 @@ function animar() {
 
   if (proyectil) {
     proyectil.t += 0.15;
-
-    const x = proyectil.x0 + proyectil.vx * proyectil.t;
+    const ESCALA = 8;
+    const x = proyectil.x0 + proyectil.vx * proyectil.t * ESCALA;
     const y = proyectil.y0 -
-      (proyectil.vy * proyectil.t - 0.5 * g * proyectil.t * proyectil.t);
+  (proyectil.vy * proyectil.t * ESCALA - 0.5 * g * proyectil.t * proyectil.t * ESCALA);
+
 
     ctx.beginPath();
     ctx.arc(x, y, 6, 0, Math.PI * 2);
