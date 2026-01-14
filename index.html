@@ -35,7 +35,7 @@ button {
 }
 
 canvas {
-  background: white;
+  background: #ffffff;
   border: 1px solid #ccc;
 }
 </style>
@@ -48,10 +48,8 @@ canvas {
 <div class="box">
 <h2>Consigna</h2>
 <p>
-Modificá el ángulo y la velocidad inicial.
-<br>
-<b>¿Qué sucede con la trayectoria?</b><br>
-<b>¿Qué variables influyen más?</b>
+Modificá el ángulo y la velocidad inicial.<br>
+<b>Observá cómo cambia el disparo del cañón.</b>
 </p>
 </div>
 
@@ -61,16 +59,16 @@ Modificá el ángulo y la velocidad inicial.
 <input type="range" min="10" max="80" value="45" id="angulo" oninput="actualizar()">
 <br><br>
 
-Velocidad inicial: <span id="velVal">15</span>
+Velocidad inicial: <span id="velVal">20</span>
 <br>
-<input type="range" min="5" max="25" value="15" id="vel" oninput="actualizar()">
+<input type="range" min="10" max="40" value="20" id="vel" oninput="actualizar()">
 <br><br>
 
 <button onclick="disparar()">Disparar</button>
 </div>
 
 <div class="box">
-<canvas id="canvas" width="500" height="300"></canvas>
+<canvas id="canvas" width="600" height="350"></canvas>
 </div>
 
 <script>
@@ -80,27 +78,41 @@ const ctx = canvas.getContext("2d");
 const g = 9.8;
 let proyectil = null;
 
-const baseX = 50;
-const baseY = canvas.height - 20;
-const canonLargo = 40;
+const baseX = 80;
+const baseY = canvas.height - 40;
+const canonLargo = 80;
 
 function actualizar() {
-  document.getElementById("anguloVal").innerText =
-    document.getElementById("angulo").value;
-  document.getElementById("velVal").innerText =
-    document.getElementById("vel").value;
+  angulo = document.getElementById("angulo").value;
+  velocidad = document.getElementById("vel").value;
+
+  document.getElementById("anguloVal").innerText = angulo;
+  document.getElementById("velVal").innerText = velocidad;
 }
 
 function dibujarCanon() {
   const ang = document.getElementById("angulo").value * Math.PI / 180;
 
+  // Base
+  ctx.fillStyle = "#444";
+  ctx.fillRect(baseX - 25, baseY, 50, 20);
+
+  // Línea guía del ángulo
+  ctx.beginPath();
+  ctx.moveTo(baseX, baseY);
+  ctx.lineTo(
+    baseX + canonLargo * Math.cos(ang),
+    baseY - canonLargo * Math.sin(ang)
+  );
+  ctx.strokeStyle = "#aaa";
+  ctx.stroke();
+
+  // Cañón
   ctx.save();
   ctx.translate(baseX, baseY);
   ctx.rotate(-ang);
-
   ctx.fillStyle = "#5A2382";
-  ctx.fillRect(0, -5, canonLargo, 10);
-
+  ctx.fillRect(0, -6, canonLargo, 12);
   ctx.restore();
 }
 
@@ -120,26 +132,28 @@ function disparar() {
 function animar() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // suelo
+  // Suelo
   ctx.beginPath();
-  ctx.moveTo(0, baseY + 5);
-  ctx.lineTo(canvas.width, baseY + 5);
+  ctx.moveTo(0, baseY + 20);
+  ctx.lineTo(canvas.width, baseY + 20);
+  ctx.strokeStyle = "#000";
   ctx.stroke();
 
   dibujarCanon();
 
   if (proyectil) {
-    proyectil.t += 0.1;
+    proyectil.t += 0.15;
 
     const x = proyectil.x0 + proyectil.vx * proyectil.t;
-    const y = proyectil.y0 - (proyectil.vy * proyectil.t - 0.5 * g * proyectil.t * proyectil.t);
+    const y = proyectil.y0 -
+      (proyectil.vy * proyectil.t - 0.5 * g * proyectil.t * proyectil.t);
 
     ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fillStyle = "#0087C8";
     ctx.fill();
 
-    if (y > baseY) {
+    if (y > baseY + 20 || x > canvas.width) {
       proyectil = null;
     }
   }
@@ -150,7 +164,6 @@ function animar() {
 actualizar();
 animar();
 </script>
-
 
 </body>
 </html>
