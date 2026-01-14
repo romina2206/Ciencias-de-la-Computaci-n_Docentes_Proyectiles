@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Movimiento de proyectiles</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  padding: 20px;
+}
+
+h1 { color: #5A2382; }
+h2 { color: #0087C8; }
+
+.box {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+input[type=range] {
+  width: 250px;
+}
+
+button {
+  background: #E6500F;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+canvas {
+  background: white;
+  border: 1px solid #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Movimiento de proyectiles</h1>
+
+<div class="box">
+<h2>Consigna</h2>
+<p>
+Modificá el ángulo y la velocidad inicial.
+<br>
+<b>¿Qué sucede con la trayectoria?</b><br>
+<b>¿Qué variables influyen más?</b>
+</p>
+</div>
+
+<div class="box">
+Ángulo: <span id="anguloVal">45</span>°
+<br>
+<input type="range" min="10" max="80" value="45" id="angulo" oninput="actualizar()">
+<br><br>
+
+Velocidad inicial: <span id="velVal">15</span>
+<br>
+<input type="range" min="5" max="25" value="15" id="vel" oninput="actualizar()">
+<br><br>
+
+<button onclick="disparar()">Disparar</button>
+</div>
+
+<div class="box">
+<canvas id="canvas" width="500" height="300"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const g = 9.8;
+let proyectil = null;
+
+function actualizar() {
+  document.getElementById("anguloVal").innerText =
+    document.getElementById("angulo").value;
+  document.getElementById("velVal").innerText =
+    document.getElementById("vel").value;
+}
+
+function disparar() {
+  const ang = document.getElementById("angulo").value * Math.PI / 180;
+  const vel = document.getElementById("vel").value;
+
+  proyectil = {
+    x: 0,
+    y: canvas.height,
+    vx: vel * Math.cos(ang),
+    vy: -vel * Math.sin(ang),
+    t: 0
+  };
+}
+
+function animar() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (proyectil) {
+    proyectil.t += 0.1;
+
+    const x = proyectil.vx * proyectil.t;
+    const y = proyectil.vy * proyectil.t + 0.5 * g * proyectil.t * proyectil.t;
+
+    const drawX = x * 10;
+    const drawY = canvas.height + y * 10;
+
+    ctx.beginPath();
+    ctx.arc(drawX, drawY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = "#0087C8";
+    ctx.fill();
+
+    if (drawY > canvas.height) {
+      proyectil = null;
+    }
+  }
+
+  requestAnimationFrame(animar);
+}
+
+actualizar();
+animar();
+</script>
+
+</body>
+</html>
