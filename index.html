@@ -80,6 +80,10 @@ const ctx = canvas.getContext("2d");
 const g = 9.8;
 let proyectil = null;
 
+const baseX = 50;
+const baseY = canvas.height - 20;
+const canonLargo = 40;
+
 function actualizar() {
   document.getElementById("anguloVal").innerText =
     document.getElementById("angulo").value;
@@ -87,37 +91,55 @@ function actualizar() {
     document.getElementById("vel").value;
 }
 
+function dibujarCanon() {
+  const ang = document.getElementById("angulo").value * Math.PI / 180;
+
+  ctx.save();
+  ctx.translate(baseX, baseY);
+  ctx.rotate(-ang);
+
+  ctx.fillStyle = "#5A2382";
+  ctx.fillRect(0, -5, canonLargo, 10);
+
+  ctx.restore();
+}
+
 function disparar() {
   const ang = document.getElementById("angulo").value * Math.PI / 180;
   const vel = document.getElementById("vel").value;
 
   proyectil = {
-    x: 0,
-    y: canvas.height,
+    t: 0,
     vx: vel * Math.cos(ang),
-    vy: -vel * Math.sin(ang),
-    t: 0
+    vy: vel * Math.sin(ang),
+    x0: baseX + canonLargo * Math.cos(ang),
+    y0: baseY - canonLargo * Math.sin(ang)
   };
 }
 
 function animar() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
+  // suelo
+  ctx.beginPath();
+  ctx.moveTo(0, baseY + 5);
+  ctx.lineTo(canvas.width, baseY + 5);
+  ctx.stroke();
+
+  dibujarCanon();
+
   if (proyectil) {
     proyectil.t += 0.1;
 
-    const x = proyectil.vx * proyectil.t;
-    const y = proyectil.vy * proyectil.t + 0.5 * g * proyectil.t * proyectil.t;
-
-    const drawX = x * 10;
-    const drawY = canvas.height + y * 10;
+    const x = proyectil.x0 + proyectil.vx * proyectil.t;
+    const y = proyectil.y0 - (proyectil.vy * proyectil.t - 0.5 * g * proyectil.t * proyectil.t);
 
     ctx.beginPath();
-    ctx.arc(drawX, drawY, 5, 0, Math.PI * 2);
+    ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fillStyle = "#0087C8";
     ctx.fill();
 
-    if (drawY > canvas.height) {
+    if (y > baseY) {
       proyectil = null;
     }
   }
@@ -128,6 +150,7 @@ function animar() {
 actualizar();
 animar();
 </script>
+
 
 </body>
 </html>
