@@ -2,168 +2,59 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Movimiento de proyectiles</title>
+<title>TEST Three.js</title>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f7f7f7;
-  padding: 20px;
-}
-
-h1 { color: #5A2382; }
-h2 { color: #0087C8; }
-
-.box {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  margin-top: 15px;
-}
-
-input[type=range] {
-  width: 250px;
-}
-
-button {
-  background: #E6500F;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-canvas {
-  background: #ffffff;
-  border: 1px solid #ccc;
-}
+  body {
+    margin: 0;
+    background: #222;
+  }
+  #scene {
+    width: 600px;
+    height: 400px;
+    margin: 20px auto;
+    border: 3px solid red;
+  }
 </style>
 </head>
 
 <body>
 
-<h1>Movimiento de proyectiles</h1>
+<div id="scene"></div>
 
-<div class="box">
-<h2>Consigna</h2>
-<p>
-Modificá el ángulo y la velocidad inicial.<br>
-<b>Observá cómo cambia el disparo del cañón.</b>
-</p>
-</div>
-
-<div class="box">
-Ángulo: <span id="anguloVal">45</span>°
-<br>
-<input type="range" min="10" max="80" value="45" id="angulo" oninput="actualizar()">
-<br><br>
-
-Velocidad inicial: <span id="velVal">20</span>
-<br>
-<input type="range" min="10" max="40" value="20" id="vel" oninput="actualizar()">
-<br><br>
-
-<button onclick="disparar()">Disparar</button>
-</div>
-
-<div class="box">
-<canvas id="canvas" width="600" height="350"></canvas>
-</div>
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <script>
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+  const container = document.getElementById("scene");
 
-const g = 9.8;
-let proyectil = null;
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
 
-const baseX = 80;
-const baseY = canvas.height - 40;
-const canonLargo = 80;
-
-function actualizar() {
-  angulo = document.getElementById("angulo").value;
-  velocidad = document.getElementById("vel").value;
-
-  document.getElementById("anguloVal").innerText = angulo;
-  document.getElementById("velVal").innerText = velocidad;
-}
-
-function dibujarCanon() {
-  const ang = document.getElementById("angulo").value * Math.PI / 180;
-
-  // Base
-  ctx.fillStyle = "#444";
-  ctx.fillRect(baseX - 25, baseY, 50, 20);
-
-  // Línea guía del ángulo
-  ctx.beginPath();
-  ctx.moveTo(baseX, baseY);
-  ctx.lineTo(
-    baseX + canonLargo * Math.cos(ang),
-    baseY - canonLargo * Math.sin(ang)
+  const camera = new THREE.PerspectiveCamera(
+    75,
+    600 / 400,
+    0.1,
+    1000
   );
-  ctx.strokeStyle = "#aaa";
-  ctx.stroke();
+  camera.position.z = 5;
 
-  // Cañón
-  ctx.save();
-  ctx.translate(baseX, baseY);
-  ctx.rotate(-ang);
-  ctx.fillStyle = "#5A2382";
-  ctx.fillRect(0, -6, canonLargo, 12);
-  ctx.restore();
-}
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(600, 400);
+  container.appendChild(renderer.domElement);
 
-function disparar() {
-  const ang = document.getElementById("angulo").value * Math.PI / 180;
-  const vel = document.getElementById("vel").value;
+  const geometry = new THREE.BoxGeometry();
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
 
-  proyectil = {
-    t: 0,
-    vx: vel * Math.cos(ang),
-    vy: vel * Math.sin(ang),
-    x0: baseX + canonLargo * Math.cos(ang),
-    y0: baseY - canonLargo * Math.sin(ang)
-  };
-}
-const ESCALA = 5;
-function animar() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // Suelo
-  ctx.beginPath();
-  ctx.moveTo(0, baseY + 20);
-  ctx.lineTo(canvas.width, baseY + 20);
-  ctx.strokeStyle = "#000";
-  ctx.stroke();
-
-  dibujarCanon();
-
-  if (proyectil) {
-    proyectil.t += 0.15;
-
-    const x = proyectil.x0 + proyectil.vx * proyectil.t * ESCALA;
-    const y = proyectil.y0 -
-  (proyectil.vy * proyectil.t * ESCALA - 0.5 * g * proyectil.t * proyectil.t * ESCALA);
-
-
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, Math.PI * 2);
-    ctx.fillStyle = "#0087C8";
-    ctx.fill();
-
-    if (y > baseY + 20 || x > canvas.width) {
-      proyectil = null;
-    }
+  function animate() {
+    requestAnimationFrame(animate);
+    cube.rotation.x += 0.01;
+    cube.rotation.y += 0.01;
+    renderer.render(scene, camera);
   }
 
-  requestAnimationFrame(animar);
-}
-
-actualizar();
-animar();
+  animate();
 </script>
 
 </body>
