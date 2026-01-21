@@ -2,201 +2,180 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Movimiento de proyectil</title>
+<title>Movimiento de Proyectil con Cañón</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  background: #f7f7f7;
-}
+  body {
+    font-family: Arial, sans-serif;
+    background: #f7f7f7;
+    padding: 20px;
+  }
 
-header {
-  background: #5A2382;
-  color: white;
-  padding: 12px;
-  text-align: center;
-}
+  h1 {
+    color: #5A2382;
+    margin-bottom: 10px;
+  }
 
-#layout {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 20px;
-}
+  .container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+  }
 
-#panel {
-  width: 260px;
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
+  .panel {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
 
-#panel h2 {
-  color: #0087C8;
-  font-size: 18px;
-  margin-top: 0;
-}
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
 
-#panel input[type=range] {
-  width: 100%;
-}
+  input[type=range] {
+    width: 100%;
+  }
 
-#scene {
-  width: 600px;
-  height: 400px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-}
-button {
-  width: 100%;
-  padding: 8px;
-  margin-top: 10px;
-  background: #E6500F;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
+  button {
+    margin-top: 15px;
+    padding: 10px;
+    width: 100%;
+    background: #E6500F;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+
+  canvas {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  }
 </style>
 </head>
 
 <body>
 
-<header>
-  <h2>Movimiento de Proyectil</h2>
-  <p>Explorá cómo influyen la fuerza, el ángulo y la masa</p>
-</header>
+<h1>Movimiento de Proyectil</h1>
 
-<div id="layout">
+<div class="container">
+  <div class="panel">
+    <label>Ángulo (°): <span id="angleVal">45</span></label>
+    <input type="range" id="angle" min="10" max="80" value="45">
 
-  <div id="panel">
-    <h2>Parámetros</h2>
+    <label>Fuerza inicial: <span id="forceVal">50</span></label>
+    <input type="range" id="force" min="10" max="100" value="50">
 
-    Masa (kg):
-    <input type="range" id="masa" min="1" max="10" value="5">
-    <span id="mVal">5</span>
+    <label>Masa del proyectil: <span id="massVal">1</span> kg</label>
+    <input type="range" id="mass" min="1" max="10" value="1">
 
-    <br><br>
-
-    Fuerza inicial:
-    <input type="range" id="fuerza" min="10" max="100" value="50">
-    <span id="fVal">50</span>
-
-    <br><br>
-
-    Ángulo (°):
-    <input type="range" id="angulo" min="10" max="80" value="45">
-    <span id="aVal">45</span>
-
-    <button onclick="disparar()">Disparar</button>
-
-    <p id="info">
-      Observá la trayectoria del proyectil.
-    </p>
+    <button onclick="launch()">Disparar</button>
   </div>
 
-  <div id="scene"></div>
-
+  <canvas id="canvas" width="800" height="400"></canvas>
 </div>
 
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-
 <script>
-const container = document.getElementById("scene");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 
-// ESCENA
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0xf0f0f0);
-
-// CÁMARA
-const camera = new THREE.PerspectiveCamera(
-  60,
-  container.clientWidth / container.clientHeight,
-  0.1,
-  100
-);
-camera.position.set(0, 6, 14);
-camera.lookAt(0, 4, 0);
-
-// RENDER
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(container.clientWidth, container.clientHeight);
-container.appendChild(renderer.domElement);
-
-// LUZ
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-const light = new THREE.PointLight(0xffffff, 0.8);
-light.position.set(5,10,5);
-scene.add(light);
-
-// SUELO
-const suelo = new THREE.Mesh(
-  new THREE.PlaneGeometry(20,10),
-  new THREE.MeshStandardMaterial({color:0xcccccc})
-);
-suelo.rotation.x = -Math.PI/2;
-scene.add(suelo);
-
-// PROYECTIL
-const proyectil = new THREE.Mesh(
-  new THREE.SphereGeometry(0.3, 16, 16),
-  new THREE.MeshStandardMaterial({color:0x0087C8})
-);
-scene.add(proyectil);
-
-let vx = 0, vy = 0;
-let enMovimiento = false;
 const g = 9.8;
-const dt = 0.05;
+let projectile = null;
+
+const cannonBase = { x: 80, y: 320 };
+const cannonLength = 60;
 
 // UI
-const masa = document.getElementById("masa");
-const fuerza = document.getElementById("fuerza");
-const angulo = document.getElementById("angulo");
+const angleInput = document.getElementById("angle");
+const forceInput = document.getElementById("force");
+const massInput = document.getElementById("mass");
 
-function updateUI() {
-  mVal.innerText = masa.value;
-  fVal.innerText = fuerza.value;
-  aVal.innerText = angulo.value;
-}
-masa.oninput = fuerza.oninput = angulo.oninput = updateUI;
-updateUI();
+angleInput.oninput = () => angleVal.textContent = angleInput.value;
+forceInput.oninput = () => forceVal.textContent = forceInput.value;
+massInput.oninput = () => massVal.textContent = massInput.value;
 
-function disparar() {
-  proyectil.position.set(-8, 0.3, 0);
+function launch() {
+  const angle = angleInput.value * Math.PI / 180;
+  const force = forceInput.value;
+  const mass = massInput.value;
 
-  const m = parseFloat(masa.value);
-  const F = parseFloat(fuerza.value);
-  const ang = THREE.MathUtils.degToRad(angulo.value);
+  const speed = force / mass;
 
-  const v0 = F / m;
-  vx = v0 * Math.cos(ang);
-  vy = v0 * Math.sin(ang);
-
-  enMovimiento = true;
+  projectile = {
+    x: cannonBase.x + Math.cos(angle) * cannonLength,
+    y: cannonBase.y - Math.sin(angle) * cannonLength,
+    vx: speed * Math.cos(angle),
+    vy: -speed * Math.sin(angle),
+    t: 0
+  };
 }
 
-// ANIMACIÓN
-function animate() {
-  requestAnimationFrame(animate);
+function drawCannon() {
+  const angle = angleInput.value * Math.PI / 180;
 
-  if (enMovimiento) {
-    vy -= g * dt;
-    proyectil.position.x += vx * dt;
-    proyectil.position.y += vy * dt;
+  ctx.save();
+  ctx.translate(cannonBase.x, cannonBase.y);
+  ctx.rotate(-angle);
 
-    if (proyectil.position.y <= 0.3) {
-      enMovimiento = false;
-    }
+  ctx.fillStyle = "#444";
+  ctx.fillRect(0, -10, cannonLength, 20);
+
+  ctx.restore();
+
+  ctx.beginPath();
+  ctx.arc(cannonBase.x, cannonBase.y, 20, 0, Math.PI * 2);
+  ctx.fillStyle = "#666";
+  ctx.fill();
+}
+
+function drawProjectile() {
+  if (!projectile) return;
+
+  ctx.beginPath();
+  ctx.arc(projectile.x, projectile.y, 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#0087C8";
+  ctx.fill();
+}
+
+function update(dt) {
+  if (!projectile) return;
+
+  projectile.t += dt;
+  projectile.x += projectile.vx * dt;
+  projectile.y += projectile.vy * dt + 0.5 * g * dt * dt;
+  projectile.vy += g * dt;
+
+  if (projectile.y > cannonBase.y) {
+    projectile = null;
   }
-
-  renderer.render(scene, camera);
 }
 
-animate();
+function drawGround() {
+  ctx.fillStyle = "#aaa";
+  ctx.fillRect(0, cannonBase.y + 20, canvas.width, 5);
+}
+
+let lastTime = 0;
+function animate(time) {
+  const dt = (time - lastTime) / 1000;
+  lastTime = time;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawGround();
+  drawCannon();
+  update(dt);
+  drawProjectile();
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
 </script>
 
 </body>
