@@ -2,59 +2,201 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>TEST Three.js</title>
+<title>Movimiento de proyectil</title>
 
 <style>
-  body {
-    margin: 0;
-    background: #222;
-  }
-  #scene {
-    width: 600px;
-    height: 400px;
-    margin: 20px auto;
-    border: 3px solid red;
-  }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #f7f7f7;
+}
+
+header {
+  background: #5A2382;
+  color: white;
+  padding: 12px;
+  text-align: center;
+}
+
+#layout {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+#panel {
+  width: 260px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+#panel h2 {
+  color: #0087C8;
+  font-size: 18px;
+  margin-top: 0;
+}
+
+#panel input[type=range] {
+  width: 100%;
+}
+
+#scene {
+  width: 600px;
+  height: 400px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  background: #E6500F;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
 </style>
 </head>
 
 <body>
 
-<div id="scene"></div>
+<header>
+  <h2>Movimiento de Proyectil</h2>
+  <p>Explorá cómo influyen la fuerza, el ángulo y la masa</p>
+</header>
+
+<div id="layout">
+
+  <div id="panel">
+    <h2>Parámetros</h2>
+
+    Masa (kg):
+    <input type="range" id="masa" min="1" max="10" value="5">
+    <span id="mVal">5</span>
+
+    <br><br>
+
+    Fuerza inicial:
+    <input type="range" id="fuerza" min="10" max="100" value="50">
+    <span id="fVal">50</span>
+
+    <br><br>
+
+    Ángulo (°):
+    <input type="range" id="angulo" min="10" max="80" value="45">
+    <span id="aVal">45</span>
+
+    <button onclick="disparar()">Disparar</button>
+
+    <p id="info">
+      Observá la trayectoria del proyectil.
+    </p>
+  </div>
+
+  <div id="scene"></div>
+
+</div>
 
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 
 <script>
-  const container = document.getElementById("scene");
+const container = document.getElementById("scene");
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+// ESCENA
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf0f0f0);
 
-  const camera = new THREE.PerspectiveCamera(
-    75,
-    600 / 400,
-    0.1,
-    1000
-  );
-  camera.position.z = 5;
+// CÁMARA
+const camera = new THREE.PerspectiveCamera(
+  60,
+  container.clientWidth / container.clientHeight,
+  0.1,
+  100
+);
+camera.position.set(0, 6, 14);
+camera.lookAt(0, 4, 0);
 
-  const renderer = new THREE.WebGLRenderer();
-  renderer.setSize(600, 400);
-  container.appendChild(renderer.domElement);
+// RENDER
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(renderer.domElement);
 
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
+// LUZ
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const light = new THREE.PointLight(0xffffff, 0.8);
+light.position.set(5,10,5);
+scene.add(light);
 
-  function animate() {
-    requestAnimationFrame(animate);
-    cube.rotation.x += 0.01;
-    cube.rotation.y += 0.01;
-    renderer.render(scene, camera);
+// SUELO
+const suelo = new THREE.Mesh(
+  new THREE.PlaneGeometry(20,10),
+  new THREE.MeshStandardMaterial({color:0xcccccc})
+);
+suelo.rotation.x = -Math.PI/2;
+scene.add(suelo);
+
+// PROYECTIL
+const proyectil = new THREE.Mesh(
+  new THREE.SphereGeometry(0.3, 16, 16),
+  new THREE.MeshStandardMaterial({color:0x0087C8})
+);
+scene.add(proyectil);
+
+let vx = 0, vy = 0;
+let enMovimiento = false;
+const g = 9.8;
+const dt = 0.05;
+
+// UI
+const masa = document.getElementById("masa");
+const fuerza = document.getElementById("fuerza");
+const angulo = document.getElementById("angulo");
+
+function updateUI() {
+  mVal.innerText = masa.value;
+  fVal.innerText = fuerza.value;
+  aVal.innerText = angulo.value;
+}
+masa.oninput = fuerza.oninput = angulo.oninput = updateUI;
+updateUI();
+
+function disparar() {
+  proyectil.position.set(-8, 0.3, 0);
+
+  const m = parseFloat(masa.value);
+  const F = parseFloat(fuerza.value);
+  const ang = THREE.MathUtils.degToRad(angulo.value);
+
+  const v0 = F / m;
+  vx = v0 * Math.cos(ang);
+  vy = v0 * Math.sin(ang);
+
+  enMovimiento = true;
+}
+
+// ANIMACIÓN
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (enMovimiento) {
+    vy -= g * dt;
+    proyectil.position.x += vx * dt;
+    proyectil.position.y += vy * dt;
+
+    if (proyectil.position.y <= 0.3) {
+      enMovimiento = false;
+    }
   }
 
-  animate();
+  renderer.render(scene, camera);
+}
+
+animate();
 </script>
 
 </body>
