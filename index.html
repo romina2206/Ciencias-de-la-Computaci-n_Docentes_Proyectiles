@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Movimiento de Proyectil con Cañón</title>
+<title>Movimiento de Proyectil</title>
 
 <style>
   body {
@@ -17,12 +17,12 @@
   }
 
   .container {
-    display: grid;
-    grid-template-columns: 300px 1fr;
+    display: flex;
     gap: 20px;
   }
 
   .panel {
+    width: 280px;
     background: white;
     padding: 15px;
     border-radius: 10px;
@@ -30,9 +30,9 @@
   }
 
   label {
-    display: block;
-    margin-top: 10px;
     font-weight: bold;
+    margin-top: 10px;
+    display: block;
   }
 
   input[type=range] {
@@ -47,7 +47,7 @@
     color: white;
     border: none;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 15px;
     cursor: pointer;
   }
 
@@ -61,23 +61,23 @@
 
 <body>
 
-<h1>Movimiento de Proyectil</h1>
+<h1>Movimiento de proyectil</h1>
 
 <div class="container">
   <div class="panel">
-    <label>Ángulo (°): <span id="angleVal">45</span></label>
+    <label>Ángulo: <span id="angleVal">45</span>°</label>
     <input type="range" id="angle" min="10" max="80" value="45">
 
-    <label>Fuerza inicial: <span id="forceVal">50</span></label>
-    <input type="range" id="force" min="10" max="100" value="50">
+    <label>Fuerza inicial: <span id="forceVal">60</span></label>
+    <input type="range" id="force" min="20" max="120" value="60">
 
-    <label>Masa del proyectil: <span id="massVal">1</span> kg</label>
+    <label>Masa: <span id="massVal">1</span> kg</label>
     <input type="range" id="mass" min="1" max="10" value="1">
 
     <button onclick="launch()">Disparar</button>
   </div>
 
-  <canvas id="canvas" width="800" height="400"></canvas>
+  <canvas id="canvas" width="800" height="420"></canvas>
 </div>
 
 <script>
@@ -85,10 +85,12 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 const g = 9.8;
-let projectile = null;
+const speedFactor = 4; // 🔥 acelera la simulación visual
 
-const cannonBase = { x: 80, y: 320 };
-const cannonLength = 60;
+const cannonBase = { x: 80, y: 330 };
+const cannonLength = 70;
+
+let projectile = null;
 
 // UI
 const angleInput = document.getElementById("angle");
@@ -104,14 +106,13 @@ function launch() {
   const force = forceInput.value;
   const mass = massInput.value;
 
-  const speed = force / mass;
+  const speed = (force / mass) * speedFactor;
 
   projectile = {
     x: cannonBase.x + Math.cos(angle) * cannonLength,
     y: cannonBase.y - Math.sin(angle) * cannonLength,
     vx: speed * Math.cos(angle),
-    vy: -speed * Math.sin(angle),
-    t: 0
+    vy: -speed * Math.sin(angle)
   };
 }
 
@@ -121,14 +122,12 @@ function drawCannon() {
   ctx.save();
   ctx.translate(cannonBase.x, cannonBase.y);
   ctx.rotate(-angle);
-
   ctx.fillStyle = "#444";
-  ctx.fillRect(0, -10, cannonLength, 20);
-
+  ctx.fillRect(0, -8, cannonLength, 16);
   ctx.restore();
 
   ctx.beginPath();
-  ctx.arc(cannonBase.x, cannonBase.y, 20, 0, Math.PI * 2);
+  ctx.arc(cannonBase.x, cannonBase.y, 18, 0, Math.PI * 2);
   ctx.fillStyle = "#666";
   ctx.fill();
 }
@@ -145,10 +144,9 @@ function drawProjectile() {
 function update(dt) {
   if (!projectile) return;
 
-  projectile.t += dt;
   projectile.x += projectile.vx * dt;
-  projectile.y += projectile.vy * dt + 0.5 * g * dt * dt;
-  projectile.vy += g * dt;
+  projectile.y += projectile.vy * dt;
+  projectile.vy += g * dt * speedFactor;
 
   if (projectile.y > cannonBase.y) {
     projectile = null;
@@ -157,7 +155,7 @@ function update(dt) {
 
 function drawGround() {
   ctx.fillStyle = "#aaa";
-  ctx.fillRect(0, cannonBase.y + 20, canvas.width, 5);
+  ctx.fillRect(0, cannonBase.y + 20, canvas.width, 4);
 }
 
 let lastTime = 0;
